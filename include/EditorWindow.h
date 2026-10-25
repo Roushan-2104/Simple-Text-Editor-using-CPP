@@ -50,6 +50,19 @@ private:
     void onSaveAs();
     void onExit();
 
+    // Edit menu
+    static void cb_undo(Fl_Widget*, void* v)   { static_cast<EditorWindow*>(v)->onUndo(); }
+    static void cb_cut(Fl_Widget*, void* v)    { static_cast<EditorWindow*>(v)->onCut(); }
+    static void cb_copy(Fl_Widget*, void* v)   { static_cast<EditorWindow*>(v)->onCopy(); }
+    static void cb_paste(Fl_Widget*, void* v)  { static_cast<EditorWindow*>(v)->onPaste(); }
+    static void cb_delete(Fl_Widget*, void* v) { static_cast<EditorWindow*>(v)->onDelete(); }
+
+    void onUndo();
+    void onCut();
+    void onCopy();
+    void onPaste();
+    void onDelete();
+
     Document& doc_;
     FileManager files_;
     Fl_Menu_Bar* menuBar_;

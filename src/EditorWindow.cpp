@@ -44,6 +44,12 @@ void EditorWindow::buildMenu() {
     menuBar_->add("&File/&Save",       FL_COMMAND + 's',            cb_save,   this);
     menuBar_->add("&File/Save &As...", FL_COMMAND + FL_SHIFT + 's', cb_saveAs, this, FL_MENU_DIVIDER);
     menuBar_->add("&File/E&xit",       FL_COMMAND + 'q',            cb_exit,   this);
+
+    menuBar_->add("&Edit/&Undo",       FL_COMMAND + 'z',            cb_undo,   this, FL_MENU_DIVIDER);
+    menuBar_->add("&Edit/Cu&t",        FL_COMMAND + 'x',            cb_cut,    this);
+    menuBar_->add("&Edit/&Copy",       FL_COMMAND + 'c',            cb_copy,   this);
+    menuBar_->add("&Edit/&Paste",      FL_COMMAND + 'v',            cb_paste,  this);
+    menuBar_->add("&Edit/&Delete",     FL_Delete,                   cb_delete, this);
 }
 
 void EditorWindow::updateTitle() {
@@ -142,3 +148,11 @@ void EditorWindow::onExit() {
     if (!checkSave()) return;
     hide();
 }
+
+// The Edit actions reuse Fl_Text_Editor's own key functions so menu items
+// and keyboard shortcuts behave the same way.
+void EditorWindow::onUndo()   { Fl_Text_Editor::kf_undo(0, editor_); }
+void EditorWindow::onCut()    { Fl_Text_Editor::kf_cut(0, editor_); }
+void EditorWindow::onCopy()   { Fl_Text_Editor::kf_copy(0, editor_); }
+void EditorWindow::onPaste()  { Fl_Text_Editor::kf_paste(0, editor_); }
+void EditorWindow::onDelete() { Fl_Text_Editor::kf_delete(0, editor_); }
