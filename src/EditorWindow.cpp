@@ -33,7 +33,7 @@ EditorWindow::EditorWindow(int w, int h, Document& doc)
     end();
 
     resizable(editor_);
-    callback(cb_exit, this);  // window close button behaves like File > Exit
+    callback(cb_close, this);
 
     searchDialog_ = std::make_unique<SearchReplaceDialog>(*editor_);
 
@@ -74,6 +74,13 @@ void EditorWindow::buildMenu() {
     menuBar_->add("&Search/Find &Next",   FL_COMMAND + 'g',            cb_findNext,   this, FL_MENU_DIVIDER);
     menuBar_->add("&Search/&Replace...",  FL_COMMAND + 'r',            cb_replace,    this);
     menuBar_->add("&Search/Replace &All", FL_COMMAND + FL_SHIFT + 'r', cb_replaceAll, this);
+}
+
+void EditorWindow::cb_close(Fl_Widget*, void* v) {
+    // FLTK also calls a window's callback when Escape is pressed; an editor
+    // should not offer to exit then. The close button behaves like File > Exit.
+    if (Fl::event() == FL_SHORTCUT && Fl::event_key() == FL_Escape) return;
+    static_cast<EditorWindow*>(v)->onExit();
 }
 
 void EditorWindow::onDocumentChanged() {

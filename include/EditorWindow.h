@@ -57,6 +57,7 @@ private:
     static void cb_save(Fl_Widget*, void* v)   { static_cast<EditorWindow*>(v)->onSave(); }
     static void cb_saveAs(Fl_Widget*, void* v) { static_cast<EditorWindow*>(v)->onSaveAs(); }
     static void cb_exit(Fl_Widget*, void* v)   { static_cast<EditorWindow*>(v)->onExit(); }
+    static void cb_close(Fl_Widget*, void* v);  // window close button
 
     void onNew();
     void onOpen();
