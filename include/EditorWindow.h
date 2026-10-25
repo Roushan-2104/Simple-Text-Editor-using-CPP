@@ -9,7 +9,9 @@
 
 class Document;
 class SearchReplaceDialog;
+class SyntaxHighlighter;
 class Fl_Menu_Bar;
+class Fl_Text_Buffer;
 class Fl_Text_Editor;
 class Fl_Widget;
 
@@ -27,7 +29,18 @@ public:
 
 private:
     void buildMenu();
+    void onDocumentChanged();
     void updateTitle();
+
+    // Syntax highlighting: the style buffer holds one style character per
+    // character of the text buffer and is kept in step with every change.
+    static void textModifiedCallback(int pos, int nInserted, int nDeleted, int nRestyled,
+                                     const char* deletedText, void* data);
+    void onTextModified(int pos, int nInserted, int nDeleted);
+    void updateHighlighting();  // turns highlighting on or off for the current file
+    void restyleAll();
+    // Re-parses [start, end); returns true if the style of the last character changed.
+    bool restyle(int start, int end);
 
     // Asks to save unsaved changes. Returns false if the user cancels.
     bool checkSave();
@@ -81,4 +94,7 @@ private:
     Fl_Menu_Bar* menuBar_;
     Fl_Text_Editor* editor_;
     std::unique_ptr<SearchReplaceDialog> searchDialog_;
+    std::unique_ptr<SyntaxHighlighter> highlighter_;
+    std::unique_ptr<Fl_Text_Buffer> styleBuffer_;
+    bool highlighting_ = false;
 };

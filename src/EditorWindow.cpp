@@ -1,13 +1,18 @@
 #include "EditorWindow.h"
 
+#include "CppHighlighter.h"
 #include "Document.h"
 #include "SearchReplaceDialog.h"
 
 #include <FL/Fl.H>
 #include <FL/Fl_Menu_Bar.H>
 #include <FL/Fl_Native_File_Chooser.H>
+#include <FL/Fl_Text_Buffer.H>
 #include <FL/Fl_Text_Editor.H>
 #include <FL/fl_ask.H>
+
+#include <algorithm>
+#include <cstdlib>
 
 namespace {
 const int kMenuHeight = 25;
@@ -32,12 +37,23 @@ EditorWindow::EditorWindow(int w, int h, Document& doc)
 
     searchDialog_ = std::make_unique<SearchReplaceDialog>(*editor_);
 
-    doc_.setChangeListener([this] { updateTitle(); });
-    updateTitle();
+    // The window holds the highlighter through a base-class pointer, so a
+    // different language only needs a different SyntaxHighlighter subclass.
+    highlighter_ = std::make_unique<CppHighlighter>();
+    styleBuffer_ = std::make_unique<Fl_Text_Buffer>();
+    editor_->highlight_data(styleBuffer_.get(), highlighter_->styleTable(),
+                            highlighter_->styleCount(), 'A', nullptr, nullptr);
+    doc_.buffer()->add_modify_callback(textModifiedCallback, this);
+
+    doc_.setChangeListener([this] { onDocumentChanged(); });
+    onDocumentChanged();
 }
 
 EditorWindow::~EditorWindow() {
     doc_.setChangeListener(nullptr);
+    doc_.buffer()->remove_modify_callback(textModifiedCallback, this);
+    searchDialog_.reset();
+    clear();  // delete the editor while the style buffer it uses still exists
 }
 
 void EditorWindow::buildMenu() {
@@ -60,8 +76,76 @@ void EditorWindow::buildMenu() {
     menuBar_->add("&Search/Replace &All", FL_COMMAND + FL_SHIFT + 'r', cb_replaceAll, this);
 }
 
+void EditorWindow::onDocumentChanged() {
+    updateTitle();
+    updateHighlighting();
+}
+
 void EditorWindow::updateTitle() {
     copy_label(doc_.getTitle().c_str());
+}
+
+void EditorWindow::textModifiedCallback(int pos, int nInserted, int nDeleted, int /*nRestyled*/,
+                                        const char* /*deletedText*/, void* data) {
+    static_cast<EditorWindow*>(data)->onTextModified(pos, nInserted, nDeleted);
+}
+
+void EditorWindow::onTextModified(int pos, int nInserted, int nDeleted) {
+    if (nInserted == 0 && nDeleted == 0) return;  // selection change only
+
+    // Keep the style buffer the same length as the text buffer.
+    if (nInserted > 0) {
+        std::string plain(nInserted, 'A');
+        styleBuffer_->replace(pos, pos + nDeleted, plain.c_str());
+    } else {
+        styleBuffer_->remove(pos, pos + nDeleted);
+    }
+    if (!highlighting_) return;
+
+    // Re-parse the changed lines, including the final newline. If its style
+    // changed, a block comment was opened or closed, so the rest of the
+    // text has to be re-parsed too.
+    Fl_Text_Buffer* text = doc_.buffer();
+    int start = text->line_start(pos);
+    int end = std::min(text->line_end(pos + nInserted) + 1, text->length());
+    if (restyle(start, end)) restyle(end, text->length());
+}
+
+void EditorWindow::updateHighlighting() {
+    bool on = highlighter_->supports(doc_.filename());
+    if (on == highlighting_) return;
+    highlighting_ = on;
+    restyleAll();
+}
+
+void EditorWindow::restyleAll() {
+    int length = doc_.buffer()->length();
+    std::string styles(length, 'A');
+    if (highlighting_ && length > 0) {
+        char* text = doc_.buffer()->text();
+        highlighter_->parse(text, &styles[0], length, 'A');
+        std::free(text);
+    }
+    styleBuffer_->text(styles.c_str());
+    editor_->redisplay_range(0, length);
+}
+
+bool EditorWindow::restyle(int start, int end) {
+    if (start >= end) return false;
+
+    char* text = doc_.buffer()->text_range(start, end);
+    char* style = styleBuffer_->text_range(start, end);
+    char lastBefore = style[end - start - 1];
+    char startStyle = (start > 0) ? styleBuffer_->byte_at(start - 1) : 'A';
+
+    highlighter_->parse(text, style, end - start, startStyle);  // polymorphic call
+    bool lastChanged = (style[end - start - 1] != lastBefore);
+
+    styleBuffer_->replace(start, end, style);
+    editor_->redisplay_range(start, end);
+    std::free(text);
+    std::free(style);
+    return lastChanged;
 }
 
 bool EditorWindow::openFile(const std::string& path) {
