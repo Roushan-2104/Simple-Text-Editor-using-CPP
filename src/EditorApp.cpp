@@ -5,7 +5,7 @@
 #include <FL/Fl.H>
 
 EditorApp::EditorApp()
-    : window_(std::make_unique<EditorWindow>(800, 600)) {}
+    : window_(std::make_unique<EditorWindow>(800, 600, document_)) {}
 
 EditorApp::~EditorApp() = default;
 

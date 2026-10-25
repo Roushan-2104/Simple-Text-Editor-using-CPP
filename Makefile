@@ -6,7 +6,7 @@ TARGET   := TextEditor
 SRC      := $(wildcard src/*.cpp)
 OBJ      := $(patsubst src/%.cpp,build/%.o,$(SRC))
 
-CXXFLAGS := -std=c++17 -Wall -Wextra -O2 -Iinclude $(shell fltk-config --cxxflags)
+CXXFLAGS := -std=c++17 -Wall -Wextra -O2 -MMD -MP -Iinclude $(shell fltk-config --cxxflags)
 LDFLAGS  := $(shell fltk-config --ldstaticflags) -static -mwindows
 
 all: $(TARGET)
@@ -24,3 +24,5 @@ clean:
 	rm -rf build $(TARGET) $(TARGET).exe
 
 .PHONY: all clean
+
+-include $(OBJ:.o=.d)

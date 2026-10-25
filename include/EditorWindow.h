@@ -2,9 +2,9 @@
 
 #include <FL/Fl_Double_Window.H>
 
+class Document;
 class Fl_Menu_Bar;
 class Fl_Text_Editor;
-class Fl_Text_Buffer;
 class Fl_Widget;
 
 // Main window: holds the menu bar and the text editor widget and handles
@@ -13,11 +13,12 @@ class Fl_Widget;
 // normal member function.
 class EditorWindow : public Fl_Double_Window {
 public:
-    EditorWindow(int w, int h);
+    EditorWindow(int w, int h, Document& doc);
     ~EditorWindow() override;
 
 private:
     void buildMenu();
+    void updateTitle();
 
     // File menu
     static void cb_new(Fl_Widget*, void* v)    { static_cast<EditorWindow*>(v)->onNew(); }
@@ -34,7 +35,7 @@ private:
     void onSaveAs();
     void onExit();
 
+    Document& doc_;
     Fl_Menu_Bar* menuBar_;
     Fl_Text_Editor* editor_;
-    Fl_Text_Buffer* textBuffer_;
 };

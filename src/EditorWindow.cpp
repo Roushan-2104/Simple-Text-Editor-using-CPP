@@ -1,33 +1,35 @@
 #include "EditorWindow.h"
 
+#include "Document.h"
+
 #include <FL/Fl.H>
 #include <FL/Fl_Menu_Bar.H>
-#include <FL/Fl_Text_Buffer.H>
 #include <FL/Fl_Text_Editor.H>
 
 namespace {
 const int kMenuHeight = 25;
 }
 
-EditorWindow::EditorWindow(int w, int h)
-    : Fl_Double_Window(w, h, "Text Editor") {
+EditorWindow::EditorWindow(int w, int h, Document& doc)
+    : Fl_Double_Window(w, h), doc_(doc) {
     menuBar_ = new Fl_Menu_Bar(0, 0, w, kMenuHeight);
     buildMenu();
 
-    textBuffer_ = new Fl_Text_Buffer();
     editor_ = new Fl_Text_Editor(0, kMenuHeight, w, h - kMenuHeight);
-    editor_->buffer(textBuffer_);
+    editor_->buffer(doc_.buffer());
     editor_->textfont(FL_COURIER);
     editor_->textsize(14);
     end();
 
     resizable(editor_);
     callback(cb_exit, this);  // window close button behaves like File > Exit
+
+    doc_.setChangeListener([this] { updateTitle(); });
+    updateTitle();
 }
 
 EditorWindow::~EditorWindow() {
-    clear();  // delete the editor before the buffer it displays
-    delete textBuffer_;
+    doc_.setChangeListener(nullptr);
 }
 
 void EditorWindow::buildMenu() {
@@ -39,7 +41,14 @@ void EditorWindow::buildMenu() {
     menuBar_->add("&File/E&xit",       FL_COMMAND + 'q',            cb_exit,   this);
 }
 
-void EditorWindow::onNew()    {}
+void EditorWindow::updateTitle() {
+    copy_label(doc_.getTitle().c_str());
+}
+
+void EditorWindow::onNew() {
+    doc_.clear();
+}
+
 void EditorWindow::onOpen()   {}
 void EditorWindow::onInsert() {}
 void EditorWindow::onSave()   {}

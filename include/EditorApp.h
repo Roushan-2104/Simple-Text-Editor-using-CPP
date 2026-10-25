@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Document.h"
+
 #include <memory>
 
 class EditorWindow;
@@ -14,5 +16,6 @@ public:
     int run(int argc, char** argv);
 
 private:
+    Document document_;                     // declared first so it outlives the window
     std::unique_ptr<EditorWindow> window_;
 };
