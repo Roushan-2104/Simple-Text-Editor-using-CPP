@@ -1,6 +1,7 @@
 #include "EditorWindow.h"
 
 #include "Document.h"
+#include "SearchReplaceDialog.h"
 
 #include <FL/Fl.H>
 #include <FL/Fl_Menu_Bar.H>
@@ -29,6 +30,8 @@ EditorWindow::EditorWindow(int w, int h, Document& doc)
     resizable(editor_);
     callback(cb_exit, this);  // window close button behaves like File > Exit
 
+    searchDialog_ = std::make_unique<SearchReplaceDialog>(*editor_);
+
     doc_.setChangeListener([this] { updateTitle(); });
     updateTitle();
 }
@@ -50,6 +53,11 @@ void EditorWindow::buildMenu() {
     menuBar_->add("&Edit/&Copy",       FL_COMMAND + 'c',            cb_copy,   this);
     menuBar_->add("&Edit/&Paste",      FL_COMMAND + 'v',            cb_paste,  this);
     menuBar_->add("&Edit/&Delete",     FL_Delete,                   cb_delete, this);
+
+    menuBar_->add("&Search/&Find...",     FL_COMMAND + 'f',            cb_find,       this);
+    menuBar_->add("&Search/Find &Next",   FL_COMMAND + 'g',            cb_findNext,   this, FL_MENU_DIVIDER);
+    menuBar_->add("&Search/&Replace...",  FL_COMMAND + 'r',            cb_replace,    this);
+    menuBar_->add("&Search/Replace &All", FL_COMMAND + FL_SHIFT + 'r', cb_replaceAll, this);
 }
 
 void EditorWindow::updateTitle() {
@@ -146,6 +154,7 @@ void EditorWindow::onSaveAs() {
 
 void EditorWindow::onExit() {
     if (!checkSave()) return;
+    searchDialog_->hide();  // Fl::run() returns once no window is shown
     hide();
 }
 
@@ -156,3 +165,21 @@ void EditorWindow::onCut()    { Fl_Text_Editor::kf_cut(0, editor_); }
 void EditorWindow::onCopy()   { Fl_Text_Editor::kf_copy(0, editor_); }
 void EditorWindow::onPaste()  { Fl_Text_Editor::kf_paste(0, editor_); }
 void EditorWindow::onDelete() { Fl_Text_Editor::kf_delete(0, editor_); }
+
+void EditorWindow::onFind() {
+    searchDialog_->showFind();
+}
+
+void EditorWindow::onFindNext() {
+    if (searchDialog_->hasSearchText()) searchDialog_->findNext();
+    else searchDialog_->showFind();
+}
+
+void EditorWindow::onReplace() {
+    searchDialog_->showReplace();
+}
+
+void EditorWindow::onReplaceAll() {
+    if (searchDialog_->hasSearchText()) searchDialog_->replaceAll();
+    else searchDialog_->showReplace();
+}

@@ -4,9 +4,11 @@
 
 #include <FL/Fl_Double_Window.H>
 
+#include <memory>
 #include <string>
 
 class Document;
+class SearchReplaceDialog;
 class Fl_Menu_Bar;
 class Fl_Text_Editor;
 class Fl_Widget;
@@ -63,8 +65,20 @@ private:
     void onPaste();
     void onDelete();
 
+    // Search menu
+    static void cb_find(Fl_Widget*, void* v)       { static_cast<EditorWindow*>(v)->onFind(); }
+    static void cb_findNext(Fl_Widget*, void* v)   { static_cast<EditorWindow*>(v)->onFindNext(); }
+    static void cb_replace(Fl_Widget*, void* v)    { static_cast<EditorWindow*>(v)->onReplace(); }
+    static void cb_replaceAll(Fl_Widget*, void* v) { static_cast<EditorWindow*>(v)->onReplaceAll(); }
+
+    void onFind();
+    void onFindNext();
+    void onReplace();
+    void onReplaceAll();
+
     Document& doc_;
     FileManager files_;
     Fl_Menu_Bar* menuBar_;
     Fl_Text_Editor* editor_;
+    std::unique_ptr<SearchReplaceDialog> searchDialog_;
 };
